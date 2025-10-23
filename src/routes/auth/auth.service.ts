@@ -1,13 +1,18 @@
-import { ResgisterBodyType } from './auth.model'
+import { ResgisterBodyType, SendOTPBodyType } from './auth.model'
 import { TokenService } from './../../shared/services/token.service'
 import { PrismaService } from 'src/shared/services/prisma.service'
 import { HashinngService } from './../../shared/services/hashinng.service'
 import { ConflictException, Injectable, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common'
 import { PrismaClient } from '@prisma/client/extension'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
-import { isRecordNotFoundError, isUniqueConstraintError } from 'src/shared/helpers'
+import { generateOTP, isRecordNotFoundError, isUniqueConstraintError } from 'src/shared/helpers'
 import { RolesService } from './roles.service'
 import { AuthRespository } from './auth.repo'
+import { SharedUserRepository } from 'src/shared/repositories/shared-user.repo'
+import { addMilliseconds } from 'date-fns'
+import envConfig from 'src/shared/config'
+import ms from 'ms'
+import { type StringValue } from 'ms'
 
 @Injectable()
 export class AuthService {
@@ -15,6 +20,7 @@ export class AuthService {
     private readonly hashinngService: HashinngService,
     private readonly authRespository: AuthRespository,
     private readonly rolesService: RolesService,
+    private readonly sharedUserRepository: SharedUserRepository,
   ) {}
 
   async register(body: ResgisterBodyType) {
@@ -27,16 +33,47 @@ export class AuthService {
         roleId: clientRoleId, // Add the role ID
         password: hashedPassword, // Override the plain password with the hashed one
       }
+
+      // if()
       const user = await this.authRespository.createUser(userData)
       return user
     } catch (error) {
       if (isUniqueConstraintError(error)) {
-        throw new ConflictException('User with this email already exists')
+        throw new UnprocessableEntityException([
+          {
+            message: 'Email đã tồn tại',
+            path: 'email',
+          },
+        ])
       }
       throw error
     }
   }
 
+  async sendOTP(body: SendOTPBodyType) {
+    try {
+      const user = await this.sharedUserRepository.findUnique({ email: body.email })
+      if (user) {
+        throw new UnprocessableEntityException([
+          {
+            message: 'Email đã tồn tại',
+            path: 'email',
+          },
+        ])
+      }
+
+      const code = generateOTP()
+      const verificationCode = await this.authRespository.createVerification({
+        email: body.email,
+        code,
+        type: body.type,
+        expiresAt: addMilliseconds(new Date(), ms(envConfig.OTP_EXPIRES_IN as StringValue)),
+      })
+      return verificationCode
+    } catch (error) {
+      console.log(error)
+    }
+  }
   // async login(body: LoginDTO) {
   //   const user = await this.prismaService.user.findUnique({
   //     where: {

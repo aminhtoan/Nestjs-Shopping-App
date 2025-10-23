@@ -1,4 +1,4 @@
-import { UserStatus } from 'src/shared/constants/auth.constant'
+import { TypeofVerificationCodeType, UserStatus } from 'src/shared/constants/auth.constant'
 import { z } from 'zod'
 
 // export enum UserStatus {
@@ -57,3 +57,21 @@ export const ResgisterResSchema = UserSchema.omit({
 })
 
 export type ResgisterResType = z.infer<typeof ResgisterResSchema>
+
+export const VerificationCode = z.object({
+  id: z.number(),
+  email: z.string(),
+  code: z.string(),
+  type: z.enum(TypeofVerificationCodeType),
+  expiresAt: z.date(),
+  createdAt: z.date(),
+})
+
+export type VerificationCodeType = z.infer<typeof VerificationCode>
+
+export const SendOTPBodySchema = VerificationCode.pick({
+  email: true,
+  type: true,
+}).strict()
+
+export type SendOTPBodyType = z.infer<typeof SendOTPBodySchema>

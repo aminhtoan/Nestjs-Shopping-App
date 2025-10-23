@@ -1,4 +1,4 @@
-import { ResgisterBodySchema, ResgisterResSchema } from './auth.model'
+import { ResgisterBodySchema, ResgisterResSchema, SendOTPBodySchema } from './auth.model'
 import { UserStatus } from '@prisma/client'
 import { createZodDto } from 'nestjs-zod'
 import { z } from 'zod'
@@ -8,3 +8,5 @@ export class RegisterBodyDTO extends createZodDto(ResgisterBodySchema) {}
 
 // cái này là cái form hoàn chỉnh của schema phản hổi về và đã đc ẩn những cái cần ẩm
 export class RegisterResDTO extends createZodDto(ResgisterResSchema) {}
+
+export class SendOTPBodyDTO extends createZodDto(SendOTPBodySchema) {}
