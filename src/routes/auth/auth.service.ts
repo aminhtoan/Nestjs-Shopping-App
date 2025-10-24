@@ -14,6 +14,7 @@ import envConfig from 'src/shared/config'
 import ms from 'ms'
 import { type StringValue } from 'ms'
 import { TypeofVerificationCodeType } from 'src/shared/constants/auth.constant'
+import { SendEmail } from 'src/shared/services/email.service'
 
 @Injectable()
 export class AuthService {
@@ -22,6 +23,7 @@ export class AuthService {
     private readonly authRespository: AuthRespository,
     private readonly rolesService: RolesService,
     private readonly sharedUserRepository: SharedUserRepository,
+    private readonly sendEmail: SendEmail,
   ) {}
 
   async register(body: ResgisterBodyType) {
@@ -92,6 +94,18 @@ export class AuthService {
         type: body.type,
         expiresAt: addMilliseconds(new Date(), ms(envConfig.OTP_EXPIRES_IN as StringValue)),
       })
+
+      // Gửi mã otp
+      const { error } = await this.sendEmail.sendEmail({ email: body.email, code: code })
+
+      if (error) {
+        throw new UnprocessableEntityException([
+          {
+            message: 'Gửi mã OTP thất bại',
+            path: 'code',
+          },
+        ])
+      }
       return verificationCode
     } catch (error) {
       console.error('Send OTP Error:', error)
