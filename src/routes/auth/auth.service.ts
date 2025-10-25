@@ -97,7 +97,6 @@ export class AuthService {
 
       // Gửi mã otp
       const { error } = await this.sendEmail.sendEmail({ email: body.email, code: code })
-
       if (error) {
         throw new UnprocessableEntityException([
           {

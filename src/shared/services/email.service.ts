@@ -2,6 +2,7 @@ import { Injectable, UnprocessableEntityException } from '@nestjs/common'
 import { Resend } from 'resend'
 import envConfig from '../config'
 import * as fs from 'fs'
+import path from 'path'
 
 @Injectable()
 export class SendEmail {
@@ -9,24 +10,19 @@ export class SendEmail {
   constructor() {
     this.resend = new Resend(envConfig.RESEND_API_KEY)
   }
-
   async sendEmail(payload: { email: string; code: string }) {
     try {
+      const templatePath = path.join(process.cwd(), 'src/shared/email-templates/otp.html')
+      let htmlTemplate = fs.readFileSync(templatePath, 'utf-8')
+      const subject = 'Verify your new Shopping account'
+      htmlTemplate = htmlTemplate.replace('{{OTP_CODE}}', payload.code)
+      htmlTemplate = htmlTemplate.replace('{{subject}}', subject)
+
       const data = await this.resend.emails.send({
-        from: 'Acme <onboarding@resend.dev>',
-        // do đang ở trong môi trường sandbox nên trong resend ta chỉ có thể gửi email đến trường chúng ta đăng ký,
-        to: ['minhtoanpham1412@gmail.com'],
-        subject: 'Verify your new Shopping account',
-        html: `
-        <div style="padding: 20px;">
-            <p>Xin chào <strong>${payload.email}</strong>,</p>
-            <p color: #007bff;">Mã OTP của bạn là: <strong> ${payload.code}</strong></p>
-            <p>Mã này sẽ hết hạn sau <strong> 5 phút</strong>.</p>
-            <p>Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi ❤️</p>
-        </div>
-        <div style="text-align: center; padding: 10px; font-size: 12px; color: #666;">
-            © 2025 FastFood. All rights reserved.
-        </div>`,
+        from: 'Nestjs Ecomerce <no-reply@miti.io.vn>',
+        to: [payload.email],
+        subject,
+        html: htmlTemplate,
       })
       return data
     } catch (error) {
