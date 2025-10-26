@@ -1,3 +1,4 @@
+import { last } from 'rxjs'
 import { TypeofVerificationCodeType, UserStatus } from 'src/shared/constants/auth.constant'
 import { z } from 'zod'
 
@@ -23,6 +24,7 @@ const UserSchema = z.object({
 
 export type UserType = z.infer<typeof UserSchema>
 
+// register
 export const ResgisterBodySchema = UserSchema.pick({
   email: true,
   password: true,
@@ -53,6 +55,7 @@ export const ResgisterResSchema = UserSchema.omit({
 
 export type ResgisterResType = z.infer<typeof ResgisterResSchema>
 
+// Send OTP
 export const VerificationCode = z.object({
   id: z.number(),
   email: z.string(),
@@ -70,3 +73,59 @@ export const SendOTPBodySchema = VerificationCode.pick({
 }).strict()
 
 export type SendOTPBodyType = z.infer<typeof SendOTPBodySchema>
+
+// Login
+export const LoginBodySchema = UserSchema.pick({
+  email: true,
+  password: true,
+}).strict()
+
+export type LoginBodyType = z.infer<typeof LoginBodySchema>
+
+export const LoginResSchema = z.object({
+  accessToken: z.string(),
+  refreshToken: z.string(),
+})
+
+export type LoginResType = z.infer<typeof LoginResSchema>
+
+export const RefreshTokenBodySchema = z
+  .object({
+    refreshToken: z.string(),
+  })
+  .strict()
+
+export type RefreshTokenBodyType = z.infer<typeof RefreshTokenBodySchema>
+
+export const RefreshTokenResSchema = LoginResSchema
+
+export type RefresTokenResType = LoginResType
+
+//device
+export const DeiviceSchema = z.object({
+  id: z.number(),
+  userId: z.number(),
+  userAgent: z.string(),
+  ip: z.string(),
+  lastActive: z.date(),
+  createdAt: z.date(),
+  isActive: z.boolean(),
+})
+
+export type DeiviceType = z.infer<typeof DeiviceSchema>
+
+// role
+export const RoleSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  description: z.string(),
+  isActive: z.boolean(),
+  createdById: z.number().nullable(),
+  updatedById: z.number().nullable(),
+  deletedById: z.number().nullable(),
+  createdAt: z.date(),
+  deletedAt: z.date().nullable(),
+  updatedAt: z.date(),
+})
+
+export type RoleType = z.infer<typeof RoleSchema>

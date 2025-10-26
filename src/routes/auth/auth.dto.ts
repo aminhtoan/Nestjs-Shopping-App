@@ -1,7 +1,11 @@
-import { ResgisterBodySchema, ResgisterResSchema, SendOTPBodySchema } from './auth.model'
-import { UserStatus } from '@prisma/client'
+import {
+  LoginBodySchema,
+  ResgisterBodySchema,
+  ResgisterResSchema,
+  SendOTPBodySchema,
+  LoginResSchema,
+} from './auth.model'
 import { createZodDto } from 'nestjs-zod'
-import { z } from 'zod'
 
 // cái này là body ý nghĩa là cái phần mày user sẽ nhập vào, có số luọng cụ thể
 export class RegisterBodyDTO extends createZodDto(ResgisterBodySchema) {}
@@ -10,3 +14,7 @@ export class RegisterBodyDTO extends createZodDto(ResgisterBodySchema) {}
 export class RegisterResDTO extends createZodDto(ResgisterResSchema) {}
 
 export class SendOTPBodyDTO extends createZodDto(SendOTPBodySchema) {}
+
+export class LoginBodyDTO extends createZodDto(LoginBodySchema) {}
+
+export class LoginResDTO extends createZodDto(LoginResSchema) {}

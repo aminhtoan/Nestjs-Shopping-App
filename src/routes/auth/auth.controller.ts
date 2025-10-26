@@ -1,7 +1,9 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, SerializeOptions } from '@nestjs/common'
-import { RegisterBodyDTO, RegisterResDTO, SendOTPBodyDTO } from './auth.dto'
+import { Body, Controller, HttpCode, HttpStatus, Ip, Post, Req, SerializeOptions } from '@nestjs/common'
+import { LoginBodyDTO, RegisterBodyDTO, RegisterResDTO, SendOTPBodyDTO } from './auth.dto'
 import { AuthService } from './auth.service'
 import { ZodSerializerDto } from 'nestjs-zod'
+import { UserAgent } from 'src/shared/decorators/user-agent.decorator'
+import { IP } from 'src/shared/decorators/ip.decorator'
 
 @Controller('auth')
 export class AuthController {
@@ -14,14 +16,14 @@ export class AuthController {
   }
 
   @Post('otp')
-  // @ZodSerializerDto(RegisterResDTO)
   async sendOTP(@Body() body: SendOTPBodyDTO) {
     return await this.authService.sendOTP(body)
   }
-  // @Post('login')
-  // login(@Body() body: LoginDTO) {
-  //   return this.authService.login(body)
-  // }
+
+  @Post('login')
+  login(@Body() body: LoginBodyDTO, @IP() ip: string, @UserAgent() userAgent: string) {
+    return this.authService.login({ ...body, ip, userAgent })
+  }
 
   // @Post('refresh-token')
   // // @Auth([AuthType.Bearer, AuthType.Apikey], { condition: ConditionGuard.Or })

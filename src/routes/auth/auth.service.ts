@@ -15,6 +15,8 @@ import ms from 'ms'
 import { type StringValue } from 'ms'
 import { TypeofVerificationCodeType } from 'src/shared/constants/auth.constant'
 import { SendEmail } from 'src/shared/services/email.service'
+import { LoginBodyDTO } from './auth.dto'
+import { AccessTokenPayLoadCreate } from 'src/shared/types/jwt.type'
 
 @Injectable()
 export class AuthService {
@@ -24,6 +26,7 @@ export class AuthService {
     private readonly rolesService: RolesService,
     private readonly sharedUserRepository: SharedUserRepository,
     private readonly sendEmail: SendEmail,
+    private readonly tokenService: TokenService,
   ) {}
 
   async register(body: ResgisterBodyType) {
@@ -111,48 +114,61 @@ export class AuthService {
       throw error
     }
   }
-  // async login(body: LoginDTO) {
-  //   const user = await this.prismaService.user.findUnique({
-  //     where: {
-  //       email: body.email,
-  //     },
-  //   })
 
-  //   if (!user) {
-  //     throw new UnauthorizedException('Email not exist')
-  //   }
+  async login(body: LoginBodyDTO & { ip: string; userAgent: string }) {
+    const user = await this.authRespository.findUniqueUserIncludeRole({
+      email: body.email,
+    })
 
-  //   const isPasswordMatch = await this.hashinngService.compare(body.password, user.password)
-  //   if (!isPasswordMatch) {
-  //     throw new UnprocessableEntityException([
-  //       {
-  //         field: 'password',
-  //         error: 'password is incorrect',
-  //       },
-  //     ])
-  //   }
+    if (!user) {
+      throw new UnauthorizedException('Email not exist')
+    }
 
-  //   const tokens = await this.generateToken({ userId: user.id })
-  //   return tokens
-  // }
+    const isPasswordMatch = await this.hashinngService.compare(body.password, user.password)
+    if (!isPasswordMatch) {
+      throw new UnprocessableEntityException([
+        {
+          field: 'password',
+          error: 'password is incorrect',
+        },
+      ])
+    }
+    const device = await this.authRespository.createDevice({
+      userId: user.id,
+      ip: body.ip,
+      userAgent: body.userAgent,
+    })
 
-  // async generateToken(payload: { userId: number }) {
-  //   const [accessToken, refreshToken] = await Promise.all([
-  //     this.tokenService.signAccessToken(payload),
-  //     this.tokenService.signRefeshToken(payload),
-  //   ])
+    const tokens = await this.generateToken({
+      userId: user.id,
+      deviceId: device.id,
+      roleId: user.roleId,
+      roleName: user.role.name,
+    })
+    return tokens
+  }
 
-  //   const decodedRefrestoken = await this.tokenService.verifyRefreshToken(refreshToken)
+  async generateToken(payload: AccessTokenPayLoadCreate) {
+    const [accessToken, refreshToken] = await Promise.all([
+      this.tokenService.signAccessToken({
+        userId: payload.userId,
+        deviceId: payload.deviceId,
+        roleId: payload.roleId,
+        roleName: payload.roleName,
+      }),
+      this.tokenService.signRefeshToken({ userId: payload.userId }),
+    ])
 
-  //   await this.prismaService.refreshToken.create({
-  //     data: {
-  //       token: refreshToken,
-  //       userId: payload.userId,
-  //       expiresAt: new Date(decodedRefrestoken.exp * 1000),
-  //     },
-  //   })
-  //   return { accessToken, refreshToken }
-  // }
+    const decodedRefrestoken = await this.tokenService.verifyRefreshToken(refreshToken)
+
+    await this.authRespository.createRefreshToken({
+      token: refreshToken,
+      userId: payload.userId,
+      expiresAt: new Date(decodedRefrestoken.exp * 1000),
+      deviceId: payload.deviceId,
+    })
+    return { accessToken, refreshToken }
+  }
 
   // async refreshToken(refreshToken: string) {
   //   try {
