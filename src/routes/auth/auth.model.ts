@@ -118,6 +118,16 @@ export const RoleSchema = z.object({
 
 export const LogoutBodySchema = RefreshTokenBodySchema
 
+// google auth 2
+export const GoogleAuthStateSchema = DeiviceSchema.pick({
+  ip: true,
+  userAgent: true,
+})
+
+export const GetAuthorizationUrlResSchema = z.object({
+  url: z.string().url(),
+})
+
 export type RoleType = z.infer<typeof RoleSchema>
 export type UserType = z.infer<typeof UserSchema>
 export type ResgisterBodyType = z.infer<typeof ResgisterBodySchema>
@@ -131,3 +141,5 @@ export type RefresTokenResType = LoginResType
 export type DeiviceType = z.infer<typeof DeiviceSchema>
 export type RefreshTokenType = z.infer<typeof RefreshTokenSchema>
 export type LogoutBodyType = RefreshTokenBodyType
+export type GoogleAuthStateType = z.infer<typeof GoogleAuthStateSchema>
+export type GetAuthorizationUrlResType = z.infer<typeof GetAuthorizationUrlResSchema>

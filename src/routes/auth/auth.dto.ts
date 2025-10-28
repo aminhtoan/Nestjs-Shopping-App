@@ -9,6 +9,8 @@ import {
   RefreshTokenBodySchema,
   RefreshTokenResSchema,
   LogoutBodySchema,
+  GoogleAuthStateSchema,
+  GetAuthorizationUrlResSchema,
 } from './auth.model'
 import { createZodDto } from 'nestjs-zod'
 
@@ -28,4 +30,8 @@ export class RefreshTokenBodyDTO extends createZodDto(RefreshTokenBodySchema) {}
 
 export class RefreshTokenResDTO extends createZodDto(RefreshTokenResSchema) {}
 
-export class LogoutBodyDTO extends createZodDto(LogoutBodySchema){}
+export class LogoutBodyDTO extends createZodDto(LogoutBodySchema) {}
+
+export class GoogleAuthStateDTO extends createZodDto(GoogleAuthStateSchema) {}
+
+export class GetAuthorizationUrlResDTO extends createZodDto(GetAuthorizationUrlResSchema) {}
