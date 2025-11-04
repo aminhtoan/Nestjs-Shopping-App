@@ -16,6 +16,7 @@ import { UserAgent } from 'src/shared/decorators/user-agent.decorator'
 import { IP } from 'src/shared/decorators/ip.decorator'
 import { MessageResDto } from 'src/shared/dtos/response.dto'
 import { GoogleService } from './google.service'
+import { Throttle } from '@nestjs/throttler'
 
 @Controller('auth')
 export class AuthController {
@@ -36,6 +37,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ZodSerializerDto(LoginResDTO)
   login(@Body() body: LoginBodyDTO, @Ip() ip: string, @UserAgent() userAgent: string) {
     return this.authService.login({ ...body, ip, userAgent })

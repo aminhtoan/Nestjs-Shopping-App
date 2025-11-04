@@ -20,5 +20,6 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT ?? 3333)
   console.log(`✅ Server listening on http://localhost:${process.env.PORT}`)
+  console.log(`✅ Swagger listening on http://localhost:${process.env.PORT}/api`)
 }
 bootstrap()
