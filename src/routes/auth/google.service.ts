@@ -78,7 +78,7 @@ export class GoogleService {
       if (!user) {
         const clientRoleId = await this.rolesService.getClientRoleId()
         const randomPassword = uuidv4()
-        const hashPass = this.hashinngService.hash(randomPassword)
+        const hashPass = await this.hashinngService.hash(randomPassword)
 
         user = await this.authRespository.createUserWithGoogle({
           email: data.email,
@@ -104,7 +104,7 @@ export class GoogleService {
       })
       return authtokens
     } catch (error) {
-      console.log(error)
+      console.error('[Google Auth Error]', error.message)
       throw new Error('Đăng nhập bằng google thất bại')
     }
   }
