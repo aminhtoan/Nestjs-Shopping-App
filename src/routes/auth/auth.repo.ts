@@ -26,6 +26,17 @@ export class AuthRespository {
     })
   }
 
+  async createUserWithGoogle(
+    user: Pick<UserType, 'email' | 'name' | 'password' | 'phoneNumber' | 'roleId' | 'avatar'>,
+  ): Promise<UserType & { role: RoleType }> {
+    return await this.prismaService.user.create({
+      data: user,
+      include: {
+        role: true,
+      },
+    })
+  }
+
   async createVerification(
     payload: Pick<VerificationCodeType, 'email' | 'type' | 'code' | 'expiresAt'>,
   ): Promise<VerificationCodeType> {
