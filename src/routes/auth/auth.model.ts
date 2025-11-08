@@ -67,7 +67,12 @@ export const SendOTPBodySchema = VerificationCode.pick({
 export const LoginBodySchema = UserSchema.pick({
   email: true,
   password: true,
-}).strict()
+})
+  .extend({
+    totpCode: z.string().length(6).optional(),
+    code: z.string().length(6).optional(),
+  })
+  .strict()
 
 export const LoginResSchema = z.object({
   accessToken: z.string(),
@@ -147,6 +152,21 @@ export const ForgotPasswordSchema = z
     }
   })
 
+export const DisableTwoFactorBodySchema = z
+  .object({
+    totpCode: z.string().length(6).optional(),
+    code: z.string().length(6).optional(),
+  })
+  .refine((data) => data.code || data.totpCode, {
+    message: 'Phải nhập mã xác nhận',
+    path: ['totpCode', 'code'],
+  })
+
+export const TwoFactorSetupResSchema = z.object({
+  secret: z.string().length(6).optional(),
+  url: z.string().length(6).optional(),
+})
+
 export type RoleType = z.infer<typeof RoleSchema>
 export type UserType = z.infer<typeof UserSchema>
 export type ResgisterBodyType = z.infer<typeof ResgisterBodySchema>
@@ -163,3 +183,5 @@ export type LogoutBodyType = RefreshTokenBodyType
 export type GoogleAuthStateType = z.infer<typeof GoogleAuthStateSchema>
 export type GetAuthorizationUrlResType = z.infer<typeof GetAuthorizationUrlResSchema>
 export type ForgotPasswordType = z.infer<typeof ForgotPasswordSchema>
+export type DisableTwoFactorBodyType = z.infer<typeof DisableTwoFactorBodySchema>
+export type TwoFactorSetupResType = z.infer<typeof TwoFactorSetupResSchema>

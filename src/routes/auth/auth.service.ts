@@ -36,9 +36,11 @@ export class AuthService {
   }) {
     // kiểm tra code có tồn tại không
     const verificationCode = await this.authRespository.findUniqueVerificationCode({
-      email: email,
-      code: code,
-      type: type,
+      email_code_type: {
+        email: email,
+        code: code,
+        type: type,
+      },
     })
 
     if (!verificationCode) {
@@ -93,9 +95,11 @@ export class AuthService {
 
       // xóa otp code vừa đăng ký để an toàn
       await this.authRespository.deleleVerificationCode({
-        email: body.email,
-        code: body.code,
-        type: TypeofVerificationCode.REGISTER,
+        email_code_type: {
+          email: body.email,
+          code: body.code,
+          type: TypeofVerificationCode.REGISTER,
+        },
       })
 
       return user
@@ -345,9 +349,11 @@ export class AuthService {
 
       // xóa Verification code sau khi đổi pass phòng ngừa có người dùng chính pass đó trong thời gian còn lại để đổi nữa
       await this.authRespository.deleleVerificationCode({
-        email: body.email,
-        code: body.code,
-        type: TypeofVerificationCode.FORGOT_PASSWORD,
+        email_code_type: {
+          email: body.email,
+          code: body.code,
+          type: TypeofVerificationCode.FORGOT_PASSWORD,
+        },
       })
 
       return {
