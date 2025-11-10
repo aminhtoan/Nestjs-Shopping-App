@@ -73,6 +73,20 @@ export const LoginBodySchema = UserSchema.pick({
     code: z.string().length(6).optional(),
   })
   .strict()
+  .superRefine(({ totpCode, code }, ctx) => {
+    if (totpCode !== undefined && code !== undefined) {
+      ctx.addIssue({
+        path: ['code'],
+        message: 'Cung cấp mã 2FA hoặc mã OTP',
+        code: 'custom',
+      })
+      ctx.addIssue({
+        path: ['totpCode'],
+        message: 'Cung cấp 2FA PCode hoặc OTP',
+        code: 'custom',
+      })
+    }
+  })
 
 export const LoginResSchema = z.object({
   accessToken: z.string(),

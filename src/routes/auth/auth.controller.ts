@@ -49,7 +49,7 @@ export class AuthController {
 
   @IsPublic()
   @Post('login')
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Throttle({ default: { limit: 5, ttl: 6000 } })
   @ZodSerializerDto(LoginResDTO)
   login(@Body() body: LoginBodyDTO, @Ip() ip: string, @UserAgent() userAgent: string) {
     return this.authService.login({ ...body, ip, userAgent })

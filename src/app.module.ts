@@ -15,14 +15,14 @@ import { AuthenticationGuard } from './shared/guards/authentication.guard'
   imports: [
     SharedModule,
     AuthModule,
-    // ThrottlerModule.forRoot({
-    //   throttlers: [
-    //     {
-    //       ttl: 1000 * 60,
-    //       limit: 10,
-    //     },
-    //   ],
-    // }),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 1000 * 60,
+          limit: 10,
+        },
+      ],
+    }),
   ],
   controllers: [AppController],
   providers: [
@@ -42,6 +42,10 @@ import { AuthenticationGuard } from './shared/guards/authentication.guard'
     {
       provide: APP_GUARD,
       useClass: AuthenticationGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: MyThrottlerGuard,
     },
   ],
 })

@@ -7,8 +7,6 @@ export class MyThrottlerGuard extends ThrottlerGuard {
     context: ExecutionContext,
     throttlerLimitDetail: ThrottlerLimitDetail,
   ): Promise<void> {
-
-    console.log(context)
     throw new ThrottlerException('Hãy nghỉ chút rồi thử lại nhé')
   }
 }

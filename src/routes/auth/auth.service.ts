@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common'
+import { BadRequestException, Injectable, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common'
 import { addMilliseconds } from 'date-fns'
 import ms, { type StringValue } from 'ms'
 import envConfig from 'src/shared/config'
@@ -9,7 +9,7 @@ import { SendEmail } from 'src/shared/services/email.service'
 import { AccessTokenPayLoadCreate } from 'src/shared/types/jwt.type'
 import { TokenService } from './../../shared/services/token.service'
 import { LoginBodyDTO, RefreshTokenBodyDTO } from './auth.dto'
-import { ForgotPasswordType, ResgisterBodyType, SendOTPBodyType } from './auth.model'
+import { ForgotPasswordType, LoginBodyType, ResgisterBodyType, SendOTPBodyType } from './auth.model'
 import { AuthRespository } from './auth.repo'
 import { RolesService } from './roles.service'
 import { HashingService } from 'src/shared/services/hashing.service'
@@ -172,8 +172,8 @@ export class AuthService {
     }
   }
 
-  async login(body: LoginBodyDTO & { ip: string; userAgent: string }) {
-    // kiểm tra email có tồn tại
+  async login(body: LoginBodyType & { ip: string; userAgent: string }) {
+    // kiểm tra email có tồn tại, check password có đúng không
     const user = await this.authRespository.findUniqueUserIncludeRole({
       email: body.email,
     })
@@ -182,7 +182,6 @@ export class AuthService {
       throw new UnauthorizedException('Email không tồn tại')
     }
 
-    // check password có đúng không
     const isPasswordMatch = await this.hashingService.compare(body.password, user.password)
 
     if (!isPasswordMatch) {
@@ -192,6 +191,44 @@ export class AuthService {
           error: 'password is incorrect',
         },
       ])
+    }
+
+    // Nếu user đã bật mã 2fa thì kiểm tra mã  2fa totp hoặc otp code email
+
+    if (user.totpSecret) {
+      const token = body.totpCode || body.code
+
+      if (!token) {
+        throw new UnprocessableEntityException([
+          {
+            message: 'Thiếu TOTP Serret và OTP code',
+            path: 'code, totpCode',
+          },
+        ])
+      }
+
+      if (body.totpCode) {
+        await this.twoFactorAuthService.verifyTOTP({
+          email: user.email,
+          secret: user.totpSecret,
+          token: body.totpCode,
+        })
+      } else if (body.code) {
+        const isValid = await this.validateVerificationCode({
+          email: user.email,
+          code: body.code,
+          type: TypeofVerificationCode.LOGIN,
+        })
+
+        if (!isValid) {
+          throw new UnprocessableEntityException([
+            {
+              message: 'Mã OTP không hợp lệ hoặc đã hết hạn',
+              path: 'totpCode',
+            },
+          ])
+        }
+      }
     }
 
     // lưu userId, địa chỉ ip, userAgent là kiểu mo tả thiết bị của bạn đang sử dụng phần mềm nào ....
@@ -371,7 +408,6 @@ export class AuthService {
   }
 
   async setUpTwoFactorAuth(userId: number) {
-    console.log('check ', userId)
     try {
       // láy thông tin user, kiểm tra xem user có tồn tại không, có bật 2fa chưa
       const user = await this.authRespository.findUniqueUserIncludeRole({ id: userId })
