@@ -168,12 +168,23 @@ export const ForgotPasswordSchema = z
 
 export const DisableTwoFactorBodySchema = z
   .object({
+    password: z.string().min(6).max(50),
     totpCode: z.string().length(6).optional(),
     code: z.string().length(6).optional(),
   })
-  .refine((data) => data.code || data.totpCode, {
-    message: 'Phải nhập mã xác thực 2FA hoặc mã OTP',
-    path: ['totpCode', 'code'],
+  .superRefine(({ totpCode, code }, ctx) => {
+    if (totpCode !== undefined && code !== undefined) {
+      ctx.addIssue({
+        path: ['code'],
+        message: 'Cung cấp mã 2FA hoặc mã OTP',
+        code: 'custom',
+      })
+      ctx.addIssue({
+        path: ['totpCode'],
+        message: 'Cung cấp 2FA PCode hoặc OTP',
+        code: 'custom',
+      })
+    }
   })
 
 export const TwoFactorSetupResSchema = z.object({

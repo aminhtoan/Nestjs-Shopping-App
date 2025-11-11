@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common'
+import { Injectable, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common'
 import { addMilliseconds } from 'date-fns'
 import ms, { type StringValue } from 'ms'
 import envConfig from 'src/shared/config'
@@ -9,7 +9,13 @@ import { SendEmail } from 'src/shared/services/email.service'
 import { AccessTokenPayLoadCreate } from 'src/shared/types/jwt.type'
 import { TokenService } from './../../shared/services/token.service'
 import { LoginBodyDTO, RefreshTokenBodyDTO } from './auth.dto'
-import { ForgotPasswordType, LoginBodyType, ResgisterBodyType, SendOTPBodyType } from './auth.model'
+import {
+  DisableTwoFactorBodyType,
+  ForgotPasswordType,
+  LoginBodyType,
+  ResgisterBodyType,
+  SendOTPBodyType,
+} from './auth.model'
 import { AuthRespository } from './auth.repo'
 import { RolesService } from './roles.service'
 import { HashingService } from 'src/shared/services/hashing.service'
@@ -201,7 +207,7 @@ export class AuthService {
       if (!token) {
         throw new UnprocessableEntityException([
           {
-            message: 'Thiếu TOTP Serret và OTP code',
+            message: 'Thiếu TOTP Secret hoặc OTP code',
             path: 'code, totpCode',
           },
         ])
@@ -430,6 +436,85 @@ export class AuthService {
       return { secret: totp, uri }
     } catch (error) {
       console.error('[AuthService:SetUpTwoFactorAuth]', error)
+      throw error
+    }
+  }
+  async disableTwoFactorAuth(body: DisableTwoFactorBodyType, userId: number) {
+    try {
+      
+      // 1. kiểm tra bằng id bằng accesstoken xem coi có tồn tại không, kiểm tra password, totpsecret có tồn tại không
+      const user = await this.authRespository.findUniqueUserIncludeRole({ id: userId })
+
+      if (!user) {
+        throw new UnauthorizedException('Không xác định được người dùng từ AccessToken')
+      }
+
+      const token = body.totpCode || body.code
+
+      if (!token) {
+        throw new UnprocessableEntityException([
+          {
+            message: 'Thiếu TOTP Secret hoặc OTP code',
+            path: 'code, totpCode',
+          },
+        ])
+      }
+
+      const passwordMatch = await this.hashingService.compare(body.password, user.password)
+
+      if (!passwordMatch) {
+        throw new UnprocessableEntityException([{ message: 'Mật khẩu bạn nhập không chính xác', path: 'password' }])
+      }
+
+      if (!user.totpSecret) {
+        throw new UnprocessableEntityException([
+          {
+            message: 'Xác thực 2FA của bạn chưa được kích hoạt',
+            path: 'totpSecret',
+          },
+        ])
+      }
+
+      // 2. kiểm tra tính hợp lệ của OTP code hoặc IOTP Code
+      if (body.totpCode) {
+        const TOTPIsvaild = await this.twoFactorAuthService.verifyTOTP({
+          email: user.email,
+          secret: user.totpSecret,
+          token: body.totpCode,
+        })
+
+        if (!TOTPIsvaild) {
+          throw new UnprocessableEntityException([
+            {
+              message: '2FA không hợp lệ',
+              path: 'totpCode',
+            },
+          ])
+        }
+      } else if (body.code) {
+        await this.validateVerificationCode({
+          email: user.email,
+          code: body.code,
+          type: TypeofVerificationCode.DISABLE_2FA,
+        })
+      }
+
+      // 3. Cập nhật thông tin
+      await this.authRespository.updateUser(
+        {
+          email: user.email,
+        },
+        {
+          totpSecret: null,
+        },
+      )
+
+      // 4. Thông báo thông tin
+      return {
+        message: 'Xóa mã xác nhận 2FA thành công',
+      }
+    } catch (error) {
+      console.error('[AuthService:DisableTwoFactorAuth]', error)
       throw error
     }
   }
