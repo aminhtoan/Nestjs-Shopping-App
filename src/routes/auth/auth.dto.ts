@@ -1,11 +1,9 @@
-import { extend } from 'zod/mini'
 import {
   LoginBodySchema,
   ResgisterBodySchema,
   ResgisterResSchema,
   SendOTPBodySchema,
   LoginResSchema,
-  RefreshTokenSchema,
   RefreshTokenBodySchema,
   RefreshTokenResSchema,
   LogoutBodySchema,

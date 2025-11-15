@@ -1,20 +1,22 @@
 import { Module } from '@nestjs/common'
+import { APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
+import { ThrottlerModule } from '@nestjs/throttler'
+import { ZodSerializerInterceptor } from 'nestjs-zod'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
-import { SharedModule } from './shared/shared.module'
-import { APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
 import { AuthModule } from './routes/auth/auth.module'
-import CustomZodValidationPipe from './shared/pipes/custom-zod-validation.pipe'
+import { LanguagesModule } from './routes/languages/languages.module'
 import { HttpExceptionFilter } from './shared/filters/http-exception.filter'
-import { ZodSerializerInterceptor } from 'nestjs-zod'
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler'
-import { MyThrottlerGuard } from './shared/guards/custom-throttler.guard'
 import { AuthenticationGuard } from './shared/guards/authentication.guard'
+import { MyThrottlerGuard } from './shared/guards/custom-throttler.guard'
+import CustomZodValidationPipe from './shared/pipes/custom-zod-validation.pipe'
+import { SharedModule } from './shared/shared.module'
 
 @Module({
   imports: [
     SharedModule,
     AuthModule,
+    LanguagesModule,
     ThrottlerModule.forRoot({
       throttlers: [
         {
@@ -23,6 +25,7 @@ import { AuthenticationGuard } from './shared/guards/authentication.guard'
         },
       ],
     }),
+    LanguagesModule,
   ],
   controllers: [AppController],
   providers: [
